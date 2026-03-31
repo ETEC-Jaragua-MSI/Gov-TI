@@ -31,7 +31,7 @@
 
 | Campo | Detalhe |
 |-------|---------|
-| **Instituição** | ETEC Zona Sul — Centro Paula Souza |
+| **Instituição** | ETEC Jaraguá — Centro Paula Souza |
 | **Curso** | Manutenção e Suporte em Informática |
 | **Disciplina** | Governança de TI |
 | **Semestre** | 2026.1 |
