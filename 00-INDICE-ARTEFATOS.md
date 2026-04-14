@@ -4,6 +4,25 @@
 > **Disciplina:** Governança de TI
 > **Conteúdo:** 12 artefatos × 2 versões (template + exemplo preenchido)
 
+## Dashboard de Scores
+
+Acesse o dashboard de acompanhamento dos TCCs em **GitHub Pages**: [`docs/index.html`](docs/index.html)
+
+Para habilitar: Settings → Pages → Source: Deploy from branch → `main` → `/docs` → Save
+
+### Script de Gaps → Issues
+
+```bash
+# Preview (dry-run)
+bash scripts/gaps-to-issues.sh
+
+# Criar issues no GitHub
+bash scripts/gaps-to-issues.sh --create
+
+# Criar e adicionar ao Project V2
+bash scripts/gaps-to-issues.sh --create --project 1
+```
+
 ---
 
 ## Resumo
@@ -31,6 +50,16 @@
 2. Substitua todos os `{{placeholders}}` pelo conteúdo do seu projeto
 3. Consulte a **pasta `exemplo/`** sempre que tiver dúvida de como preencher
 4. Use o **checklist do README** para verificar completude antes de entregar
+
+---
+
+## Progresso dos Projetos
+
+<!-- PROGRESS-START -->
+| Projeto | Issues Abertas | Issues Fechadas | Progresso (%) |
+|---------|---------------|-----------------|---------------|
+| _Execute o workflow para atualizar_ | — | — | — |
+<!-- PROGRESS-END -->
 
 ---
 

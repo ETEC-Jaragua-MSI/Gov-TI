@@ -1,0 +1,271 @@
+# ============================================================
+# Workflow: Atualiza tabela de progresso no README/índice
+#
+# Objetivo: ler as Issues do repositório, contar abertas vs
+# fechadas por label de projeto, e atualizar uma tabela
+# markdown entre os marcadores <!-- PROGRESS-START --> e
+# <!-- PROGRESS-END --> no arquivo 00-INDICE-ARTEFATOS.md
+#
+# Disparo:
+#   - Push na branch main (quando alguém abre/fecha Issue via PR)
+#   - Diariamente às 06:00 UTC (03:00 horário de Brasília)
+# ============================================================
+
+name: Atualizar Badge de Progresso
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    # Roda todos os dias às 06:00 UTC (03:00 Brasília)
+    - cron: '0 6 * * *'
+
+  # Permite disparar manualmente pela interface do GitHub
+  # (aba Actions > selecione o workflow > "Run workflow")
+  workflow_dispatch:
+
+jobs:
+  atualizar-progresso:
+    name: Contar Issues e Atualizar Tabela
+    runs-on: ubuntu-latest
+
+    # Permissões mínimas necessárias:
+    #   contents: write  → para fazer commit no repositório
+    #   issues: read     → para ler as Issues via gh CLI
+    permissions:
+      contents: write
+      issues: read
+
+    steps:
+      # ----------------------------------------------------------
+      # 1. Faz checkout do repositório para que possamos
+      #    ler e modificar os arquivos
+      # ----------------------------------------------------------
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+        with:
+          # Usa o token padrão do GitHub Actions para autenticar
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ----------------------------------------------------------
+      # 2. Coleta dados de Issues abertas e fechadas por projeto
+      #
+      #    A lógica usa a GitHub CLI (gh) que já vem instalada
+      #    nos runners do GitHub Actions.
+      #
+      #    Cada projeto é identificado por uma label no formato:
+      #    "projeto-1", "projeto-2", etc.
+      #
+      #    Ajuste a lista PROJETOS conforme os labels reais
+      #    cadastrados no repositório.
+      # ----------------------------------------------------------
+      - name: Coletar dados das Issues por projeto
+        id: coletar
+        env:
+          # GH_TOKEN é a variável que a CLI gh usa para autenticar
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Dono e nome do repositório no formato "usuario/repo"
+          REPO: ${{ github.repository }}
+        run: |
+          # Lista de labels de projeto — ajuste conforme os repos dos alunos
+          # Formato: "label-no-github|Nome para exibicao"
+          PROJETOS=(
+            "sigatccompact|Sigatccompact (Ativos)"
+            "App-de-Libras|App de Libras"
+            "SOS-EPIs|S.O.S. EPIs"
+            "automacao-residencial|Automacao Residencial"
+            "Automa-o-de-tratamento-de-dados|Automacao Trat. Dados"
+            "gestao-incidentes-infopro|Gestao Incidentes InfoPro"
+          )
+
+          # Arquivo temporário onde vamos montar a tabela markdown
+          TABELA_TEMP=$(mktemp)
+
+          # Cabeçalho da tabela
+          echo "| Projeto | Issues Abertas | Issues Fechadas | Progresso (%) |" >> "$TABELA_TEMP"
+          echo "|---------|:--------------:|:---------------:|:-------------:|" >> "$TABELA_TEMP"
+
+          # Variáveis de totalizador geral
+          TOTAL_ABERTAS=0
+          TOTAL_FECHADAS=0
+
+          for ENTRADA in "${PROJETOS[@]}"; do
+            # Separa label e nome de exibicao
+            LABEL="${ENTRADA%%|*}"
+            NOME_DISPLAY="${ENTRADA##*|}"
+
+            # Conta issues ABERTAS com este label
+            ABERTAS=$(gh issue list \
+              --repo "$REPO" \
+              --label "$LABEL" \
+              --state open \
+              --limit 500 \
+              --json number \
+              --jq 'length')
+
+            # Conta issues FECHADAS com este label
+            FECHADAS=$(gh issue list \
+              --repo "$REPO" \
+              --label "$LABEL" \
+              --state closed \
+              --limit 500 \
+              --json number \
+              --jq 'length')
+
+            # Garante que os valores sejam numericos (fallback para 0)
+            ABERTAS=${ABERTAS:-0}
+            FECHADAS=${FECHADAS:-0}
+
+            # Calcula o total para este projeto
+            TOTAL=$(( ABERTAS + FECHADAS ))
+
+            # Calcula o percentual de conclusao
+            if [ "$TOTAL" -gt 0 ]; then
+              PORCENTO=$(( (FECHADAS * 100) / TOTAL ))
+            else
+              PORCENTO=0
+            fi
+
+            # Adiciona linha na tabela
+            echo "| $NOME_DISPLAY | $ABERTAS | $FECHADAS | $PORCENTO% |" >> "$TABELA_TEMP"
+
+            # Acumula totais gerais
+            TOTAL_ABERTAS=$(( TOTAL_ABERTAS + ABERTAS ))
+            TOTAL_FECHADAS=$(( TOTAL_FECHADAS + FECHADAS ))
+          done
+
+          # Linha de totais gerais
+          TOTAL_GERAL=$(( TOTAL_ABERTAS + TOTAL_FECHADAS ))
+          if [ "$TOTAL_GERAL" -gt 0 ]; then
+            PORCENTO_GERAL=$(( (TOTAL_FECHADAS * 100) / TOTAL_GERAL ))
+          else
+            PORCENTO_GERAL=0
+          fi
+
+          echo "|---------|:--------------:|:---------------:|:-------------:|" >> "$TABELA_TEMP"
+          echo "| **Total** | **$TOTAL_ABERTAS** | **$TOTAL_FECHADAS** | **$PORCENTO_GERAL%** |" >> "$TABELA_TEMP"
+
+          # Salva o conteúdo da tabela numa variável de output
+          # Usa delimitador especial para suportar conteúdo multilinha
+          {
+            echo "tabela<<TABELA_EOF"
+            cat "$TABELA_TEMP"
+            echo "TABELA_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          # Registra a data/hora da atualização (horário de Brasília)
+          DATA_ATUALIZACAO=$(TZ="America/Sao_Paulo" date "+%d/%m/%Y às %H:%M (BRT)")
+          echo "data_atualizacao=$DATA_ATUALIZACAO" >> "$GITHUB_OUTPUT"
+
+          # Limpeza do arquivo temporário
+          rm -f "$TABELA_TEMP"
+
+      # ----------------------------------------------------------
+      # 3. Substitui o bloco entre os marcadores HTML no arquivo
+      #    de índice com a tabela atualizada
+      #
+      #    O arquivo deve conter exatamente estes dois marcadores:
+      #      <!-- PROGRESS-START -->
+      #      <!-- PROGRESS-END -->
+      #
+      #    Tudo entre eles será sobrescrito.
+      # ----------------------------------------------------------
+      - name: Atualizar tabela no arquivo de índice
+        env:
+          TABELA: ${{ steps.coletar.outputs.tabela }}
+          DATA: ${{ steps.coletar.outputs.data_atualizacao }}
+        run: |
+          # Arquivo alvo — ajuste o caminho se necessário
+          ARQUIVO_ALVO="00-INDICE-ARTEFATOS.md"
+
+          # Verifica se o arquivo existe antes de tentar modificar
+          if [ ! -f "$ARQUIVO_ALVO" ]; then
+            echo "AVISO: $ARQUIVO_ALVO não encontrado. Pulando atualização."
+            exit 0
+          fi
+
+          # Verifica se os marcadores existem no arquivo
+          if ! grep -q "<!-- PROGRESS-START -->" "$ARQUIVO_ALVO"; then
+            echo "AVISO: Marcador <!-- PROGRESS-START --> não encontrado em $ARQUIVO_ALVO."
+            echo "Adicione os marcadores ao arquivo para ativar a atualização automática."
+            exit 0
+          fi
+
+          # Monta o bloco completo que vai substituir o conteúdo entre os marcadores
+          # O Python é usado aqui pois o sed tem limitações com conteúdo multilinha
+          python3 - <<'PYEOF'
+          import os
+          import re
+
+          arquivo = "00-INDICE-ARTEFATOS.md"
+          tabela = os.environ.get("TABELA", "")
+          data = os.environ.get("DATA", "")
+
+          # Lê o conteúdo atual
+          with open(arquivo, "r", encoding="utf-8") as f:
+              conteudo = f.read()
+
+          # Monta o bloco novo com os marcadores e a tabela
+          bloco_novo = (
+              "<!-- PROGRESS-START -->\n"
+              f"\n"
+              f"## Progresso por Projeto\n"
+              f"\n"
+              f"> Atualizado automaticamente em: {data}\n"
+              f"\n"
+              f"{tabela}\n"
+              f"\n"
+              "<!-- PROGRESS-END -->"
+          )
+
+          # Substitui o conteúdo entre os marcadores (inclusive os próprios marcadores)
+          padrao = r"<!-- PROGRESS-START -->.*?<!-- PROGRESS-END -->"
+          novo_conteudo = re.sub(padrao, bloco_novo, conteudo, flags=re.DOTALL)
+
+          # Escreve o arquivo atualizado
+          with open(arquivo, "w", encoding="utf-8") as f:
+              f.write(novo_conteudo)
+
+          print(f"Arquivo {arquivo} atualizado com sucesso.")
+          PYEOF
+
+      # ----------------------------------------------------------
+      # 4. Verifica se houve mudança real no arquivo.
+      #    Se nada mudou (ex.: todos os números são os mesmos),
+      #    não cria um commit desnecessário.
+      # ----------------------------------------------------------
+      - name: Verificar se há mudanças para commitar
+        id: verificar_mudancas
+        run: |
+          if git diff --quiet 00-INDICE-ARTEFATOS.md; then
+            echo "mudancas=false" >> "$GITHUB_OUTPUT"
+            echo "Nenhuma mudança detectada. Commit pulado."
+          else
+            echo "mudancas=true" >> "$GITHUB_OUTPUT"
+            echo "Mudanças detectadas. Preparando commit."
+          fi
+
+      # ----------------------------------------------------------
+      # 5. Faz commit e push das mudanças no arquivo de índice
+      #    Usa o usuário "github-actions[bot]" como autor,
+      #    que é o padrão para commits automáticos no GitHub.
+      # ----------------------------------------------------------
+      - name: Commitar atualização do índice
+        if: steps.verificar_mudancas.outputs.mudancas == 'true'
+        run: |
+          # Configura identidade do bot para o commit
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Adiciona somente o arquivo de índice (não adiciona outros arquivos)
+          git add 00-INDICE-ARTEFATOS.md
+
+          # Cria o commit com mensagem descritiva
+          git commit -m "chore: atualiza tabela de progresso das Issues [skip ci]
+
+          Atualização automática gerada pelo workflow update-readme-badge.
+          Dados coletados via GitHub CLI (gh issue list) por label de projeto."
+
+          # Envia para o repositório remoto
+          git push
