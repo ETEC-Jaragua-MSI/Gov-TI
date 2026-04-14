@@ -56,9 +56,22 @@ bash scripts/gaps-to-issues.sh --create --project 1
 ## Progresso dos Projetos
 
 <!-- PROGRESS-START -->
+
+## Progresso por Projeto
+
+> Atualizado automaticamente em: 13/04/2026 às 22:29 (BRT)
+
 | Projeto | Issues Abertas | Issues Fechadas | Progresso (%) |
-|---------|---------------|-----------------|---------------|
-| _Execute o workflow para atualizar_ | — | — | — |
+|---------|:--------------:|:---------------:|:-------------:|
+| Sigatccompact (Ativos) | 0 | 0 | 0% |
+| App de Libras | 0 | 0 | 0% |
+| S.O.S. EPIs | 0 | 0 | 0% |
+| Automacao Residencial | 0 | 0 | 0% |
+| Automacao Trat. Dados | 0 | 0 | 0% |
+| Gestao Incidentes InfoPro | 0 | 0 | 0% |
+|---------|:--------------:|:---------------:|:-------------:|
+| **Total** | **0** | **0** | **0%** |
+
 <!-- PROGRESS-END -->
 
 ---
