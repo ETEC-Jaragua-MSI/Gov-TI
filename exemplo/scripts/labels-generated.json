@@ -1,0 +1,62 @@
+[
+  {
+    "name": "P1-critico",
+    "color": "b60205",
+    "description": "P1: SLA resolução 4h"
+  },
+  {
+    "name": "P2-alto",
+    "color": "e11d48",
+    "description": "P2: SLA resolução 8h"
+  },
+  {
+    "name": "P3-medio",
+    "color": "f97316",
+    "description": "P3: SLA resolução 24h"
+  },
+  {
+    "name": "P4-baixo",
+    "color": "0ea5e9",
+    "description": "P4: SLA resolução 72h"
+  },
+  {
+    "name": "incidente",
+    "color": "d73a4a",
+    "description": "Incidente do catálogo"
+  },
+  {
+    "name": "processo",
+    "color": "0075ca",
+    "description": "Atividade do processo TO-BE"
+  },
+  {
+    "name": "raci",
+    "color": "bfd4f2",
+    "description": "Atividade com RACI definido"
+  },
+  {
+    "name": "solucao-documentada",
+    "color": "0e8a16",
+    "description": "Já possui solução na base de conhecimento"
+  },
+  {
+    "name": "cat-hardware",
+    "color": "d73a4a",
+    "description": "Categoria: Hardware"
+  },
+  {
+    "name": "cat-software",
+    "color": "0075ca",
+    "description": "Categoria: Software"
+  },
+  {
+    "name": "cat-rede",
+    "color": "e4e669",
+    "description": "Categoria: Rede"
+  },
+  {
+    "name": "cat-periferico",
+    "color": "d4c5f9",
+    "description": "Categoria: Periférico"
+  }
+]
