@@ -27,12 +27,6 @@
 
 ## Como Usar
 
-### Para o professor(a):
-1. Distribua a **pasta `template/`** para os alunos no início do semestre
-2. Use a **pasta `exemplo/`** (InfoPro) como modelo de referência
-3. Avalie os artefatos conforme a rubrica da disciplina
-
-### Para o aluno:
 1. Copie a **pasta `template/`** para o repositório do seu TCC
 2. Substitua todos os `{{placeholders}}` pelo conteúdo do seu projeto
 3. Consulte a **pasta `exemplo/`** sempre que tiver dúvida de como preencher
