@@ -31,6 +31,8 @@ jobs:
         uses: actions/add-to-project@v1.0.2
         with:
           # URL do Project da organização
-          project-url: https://github.com/orgs/ETEC-Jaragua-MSI/projects/15
+          # Ajuste o número conforme o Project atual ou defina a variável:
+          #   gh variable set PROJECT_NUMBER --body 15
+          project-url: https://github.com/orgs/ETEC-Jaragua-MSI/projects/${{ vars.PROJECT_NUMBER || '15' }}
           # PAT com escopo "project" armazenado como secret
           github-token: ${{ secrets.PROJECT_TOKEN }}

@@ -1,0 +1,56 @@
+projeto	severidade	area	descricao
+App-de-Libras	critica	badges	Remover placeholders dos badges (Status, Framework)
+App-de-Libras	critica	framework	Definir e preencher framework de governanca utilizado
+App-de-Libras	critica	framework	Preencher detalhamento de praticas aplicadas
+App-de-Libras	critica	referencias	Adicionar referencias bibliograficas (minimo 8 fontes ABNT)
+App-de-Libras	alta	sobre	Corrigir formatacao da tabela Sobre o Projeto
+App-de-Libras	alta	metodologia	Preencher amostra/participantes da metodologia
+App-de-Libras	alta	glossario	Preencher glossario com termos especificos do projeto
+App-de-Libras	alta	equipe	Preencher secao Equipe com nomes, RA, funcoes e contatos
+App-de-Libras	alta	entregaveis	Preencher entregaveis com localizacao real dos arquivos
+App-de-Libras	alta	resultados	Preencher resultados e conclusoes
+App-de-Libras	media	cronograma	Corrigir periodo de coleta — datas incoerentes com semestre
+App-de-Libras	media	template	Remover comentarios HTML do template
+App-de-Libras	baixa	palavras-chave	Padronizar palavras-chave sem placeholders
+SOS-EPIs	critica	badges	Remover placeholders dos badges (Status, Framework)
+SOS-EPIs	critica	framework	Preencher tabela de frameworks
+SOS-EPIs	critica	framework	Preencher detalhamento de praticas aplicadas
+SOS-EPIs	critica	referencias	Adicionar referencias bibliograficas (minimo 8 fontes ABNT)
+SOS-EPIs	critica	equipe	Preencher secao Equipe
+SOS-EPIs	alta	entregaveis	Substituir nomes de arquivos genericos nos entregaveis
+SOS-EPIs	alta	cronograma	Refazer cronograma — 4 fases com atividade identica repetida
+SOS-EPIs	alta	resultados	Preencher resultados e conclusoes com metricas ou projecoes
+SOS-EPIs	alta	glossario	Preencher glossario com termos especificos (RFID, ESP32, etc.)
+SOS-EPIs	media	estrutura	Corrigir estrutura do repositorio — tem placeholders
+SOS-EPIs	media	template	Remover comentarios HTML do template
+SOS-EPIs	media	cronograma	Confirmar periodo de coleta (Ago 2025 a Dez 2025)
+SOS-EPIs	baixa	licenca	Preencher ano e instituicao na licenca
+automacao-residencial	critica	geral	Template completamente intocado — NENHUMA secao preenchida
+automacao-residencial	critica	titulo	Definir titulo do projeto
+automacao-residencial	critica	resumo	Escrever resumo (contexto, problema, abordagem, entregaveis, resultado)
+automacao-residencial	critica	problema	Definir problema com dados concretos e mensuraveis
+automacao-residencial	critica	objetivo	Definir objetivo geral com meta mensuravel
+automacao-residencial	critica	objetivos-especificos	Listar objetivos especificos (3-5)
+automacao-residencial	critica	framework	Definir framework de governanca e detalhar aplicacao
+automacao-residencial	critica	escopo	Definir escopo (dentro/fora) e premissas/restricoes
+automacao-residencial	critica	entregaveis	Listar entregaveis com formatos e localizacao
+automacao-residencial	critica	cronograma	Criar cronograma com datas reais
+automacao-residencial	critica	referencias	Adicionar referencias bibliograficas (minimo 8)
+automacao-residencial	critica	equipe	Preencher equipe, glossario e checklist
+automacao-tratamento-dados	critica	geral	Template completamente intocado — NENHUMA secao preenchida
+automacao-tratamento-dados	critica	titulo	Definir titulo do projeto
+automacao-tratamento-dados	critica	resumo	Escrever resumo (contexto, problema, abordagem, entregaveis, resultado)
+automacao-tratamento-dados	critica	problema	Definir problema com dados concretos e mensuraveis
+automacao-tratamento-dados	critica	objetivo	Definir objetivo geral com meta mensuravel
+automacao-tratamento-dados	critica	objetivos-especificos	Listar objetivos especificos (3-5)
+automacao-tratamento-dados	critica	framework	Definir framework de governanca e detalhar aplicacao
+automacao-tratamento-dados	critica	escopo	Definir escopo (dentro/fora) e premissas/restricoes
+automacao-tratamento-dados	critica	entregaveis	Listar entregaveis com formatos e localizacao
+automacao-tratamento-dados	critica	cronograma	Criar cronograma com datas reais
+automacao-tratamento-dados	critica	referencias	Adicionar referencias bibliograficas (minimo 8)
+automacao-tratamento-dados	critica	equipe	Preencher equipe, glossario e checklist
+sigatccompact	alta	checklist	Preencher itens pendentes: diagramas AS-IS/TO-BE, RACI, dados
+sigatccompact	media	orientador	Informar orientador(a) — campo diz A definir
+sigatccompact	media	referencias	Formatar referencias em padrao ABNT completo
+sigatccompact	baixa	diagramas	Adicionar diagramas AS-IS e TO-BE dos processos
+sigatccompact	baixa	verificacao	Verificar que todos os arquivos referenciados existem no repo

@@ -1,0 +1,51 @@
+# _config.yml — Configuração do Jekyll para GitHub Pages
+# ─────────────────────────────────────────────────────────────────────────────
+# Este arquivo controla o que o Jekyll publica como site.
+# Apenas a pasta docs/ é publicada; template/, exemplo/ e scripts/
+# são excluídos para não virarem páginas desnecessárias.
+# ─────────────────────────────────────────────────────────────────────────────
+
+title: "TCC Gov-TI — ETEC Jaraguá"
+description: "Kit de artefatos para TCC de Governança de TI — Curso de Manutenção e Suporte em Informática"
+baseurl: "/Gov-TI"
+url: "https://etec-jaragua-msi.github.io"
+
+# Tema padrão do GitHub Pages (minima é o mais leve)
+theme: minima
+
+# Idioma
+lang: pt-BR
+
+# Excluir pastas que NÃO devem aparecer como páginas no site
+exclude:
+  - template/
+  - exemplo/
+  - scripts/
+  - "*.sh"
+  - "*.py"
+  - "*.tsv"
+  - "*.xlsx"
+  - "*.csv"
+  - CONTRIBUTING.md
+  - 00-INDICE-ARTEFATOS.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/
+
+# Incluir apenas docs/ como fonte de conteúdo do site
+# (o README.md da raiz vira a index)
+include:
+  - docs/
+  - README.md
+
+# Configurações do Markdown
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Plugins permitidos no GitHub Pages
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
