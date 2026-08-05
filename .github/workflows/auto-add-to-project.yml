@@ -1,0 +1,36 @@
+# ============================================================
+# Workflow: Adiciona automaticamente Issues e PRs ao Project V2
+#
+# Objetivo: quando uma Issue ou Pull Request é aberta neste
+# repositório, adicioná-la automaticamente ao Project #15
+# da organização ETEC-Jaragua-MSI.
+#
+# Pré-requisito:
+#   Adicione um PAT com escopo "project" como secret:
+#     gh secret set PROJECT_TOKEN
+#   O token precisa ter permissão de leitura/escrita no Project.
+# ============================================================
+
+name: Adicionar ao Project
+
+on:
+  issues:
+    types:
+      - opened
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  adicionar-ao-project:
+    name: Adicionar Issue/PR ao Project #15
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Adicionar ao Project V2
+        uses: actions/add-to-project@v1.0.2
+        with:
+          # URL do Project da organização
+          project-url: https://github.com/orgs/ETEC-Jaragua-MSI/projects/15
+          # PAT com escopo "project" armazenado como secret
+          github-token: ${{ secrets.PROJECT_TOKEN }}
