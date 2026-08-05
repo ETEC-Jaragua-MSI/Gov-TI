@@ -54,9 +54,11 @@ jobs:
           fi
 
           # Contar checkboxes marcados: - [x]
-          CONCLUIDOS=$(grep -cP '^\s*-\s*\[x\]' "$README" || echo "0")
+          CONCLUIDOS=$(grep -cP '^\s*-\s*\[x\]' "$README" || true)
+          CONCLUIDOS=${CONCLUIDOS:-0}
           # Contar checkboxes pendentes: - [ ]
-          PENDENTES=$(grep -cP '^\s*-\s*\[ \]' "$README" || echo "0")
+          PENDENTES=$(grep -cP '^\s*-\s*\[ \]' "$README" || true)
+          PENDENTES=${PENDENTES:-0}
           TOTAL=$(( CONCLUIDOS + PENDENTES ))
 
           if [ "$TOTAL" -gt 0 ]; then
