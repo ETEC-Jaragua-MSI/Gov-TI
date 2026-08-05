@@ -1,0 +1,248 @@
+# ============================================================
+# Workflow: Valida placeholders nos READMEs dos alunos
+#
+# Objetivo: detectar se algum README ainda contém {{placeholders}}
+# não preenchidos e abrir uma issue de aviso automaticamente.
+#
+# Disparo:
+#   - Push na branch main (quando alguém commita no repositório)
+#   - Diariamente às 07:00 UTC (04:00 Brasília)
+#   - Pode ser disparado manualmente pela aba Actions
+# ============================================================
+
+name: Validar Placeholders nos READMEs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/README.md'
+  schedule:
+    # Roda diariamente às 07:00 UTC (04:00 Brasília)
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  validar-placeholders:
+    name: Verificar placeholders não preenchidos
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      # ----------------------------------------------------------
+      # 1. Checkout do repositório
+      # ----------------------------------------------------------
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------
+      # 2. Detectar placeholders em todos os READMEs e arquivos MD
+      #
+      #    Busca o padrão {{texto}} que indica placeholders do
+      #    template ainda não substituídos pelos alunos.
+      #
+      #    Ignora os arquivos do próprio template (template/)
+      #    e do exemplo (exemplo/), pois eles intencionalmente
+      #    contêm placeholders.
+      # ----------------------------------------------------------
+      - name: Detectar placeholders não preenchidos
+        id: detectar
+        run: |
+          echo "🔍 Buscando placeholders {{...}} nos arquivos Markdown..."
+
+          # Busca arquivos com {{placeholders}}
+          # Exclui: template/, exemplo/, .github/
+          ARQUIVOS_COM_GAPS=$(grep -rl '{{' . \
+            --include="*.md" \
+            --exclude-dir=".git" \
+            --exclude-dir="template" \
+            --exclude-dir="exemplo" \
+            --exclude-dir=".github" \
+            2>/dev/null || true)
+
+          if [ -z "$ARQUIVOS_COM_GAPS" ]; then
+            echo "✅ Nenhum placeholder encontrado! Todos os READMEs estão preenchidos."
+            echo "tem_gaps=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "⚠️  Arquivos com placeholders detectados:"
+          echo "$ARQUIVOS_COM_GAPS"
+
+          # Para cada arquivo, conta e lista os placeholders
+          RELATORIO=""
+          TOTAL_GAPS=0
+
+          while IFS= read -r ARQUIVO; do
+            GAPS=$(grep -o '{{[^}]*}}' "$ARQUIVO" | sort -u | head -20)
+            CONTAGEM=$(echo "$GAPS" | grep -c '{{' || echo "0")
+            TOTAL_GAPS=$((TOTAL_GAPS + CONTAGEM))
+
+            RELATORIO="${RELATORIO}
+          ### 📄 \`${ARQUIVO}\`
+          **${CONTAGEM} placeholder(s) encontrado(s):**
+
+          \`\`\`
+          $(echo "$GAPS" | head -10)
+          \`\`\`
+          "
+          done <<< "$ARQUIVOS_COM_GAPS"
+
+          # Salva variáveis de output
+          echo "tem_gaps=true" >> "$GITHUB_OUTPUT"
+          echo "total_gaps=$TOTAL_GAPS" >> "$GITHUB_OUTPUT"
+
+          # Salva o relatório em arquivo para usar no próximo step
+          {
+            echo "## ⚠️ Placeholders não preenchidos detectados"
+            echo ""
+            echo "> **Total:** ${TOTAL_GAPS} placeholder(s) em $(echo "$ARQUIVOS_COM_GAPS" | wc -l | tr -d ' ') arquivo(s)"
+            echo "> **Data da verificação:** $(TZ='America/Sao_Paulo' date '+%d/%m/%Y às %H:%M (BRT)')"
+            echo ""
+            echo "Estes arquivos ainda contêm trechos \`{{entre chaves duplas}}\` que precisam ser substituídos."
+            echo "Cada \`{{placeholder}}\` é uma instrução do template que deve ser trocada pelo conteúdo real do projeto."
+            echo ""
+            echo "---"
+            echo ""
+            echo "$RELATORIO"
+            echo ""
+            echo "---"
+            echo ""
+            echo "## Como corrigir"
+            echo ""
+            echo "1. Abra o arquivo no editor do GitHub (clique no lápis ✏️)"
+            echo "2. Use \`Ctrl+F\` para buscar \`{{\`"
+            echo "3. Para cada placeholder encontrado:"
+            echo "   - Selecione todo o trecho \`{{...}}\`"
+            echo "   - Substitua pelo conteúdo real do projeto"
+            echo "4. Faça commit com uma mensagem descritiva"
+            echo "5. Esta issue será fechada automaticamente quando não houver mais placeholders"
+            echo ""
+            echo "💡 Consulte \`docs/guia-aluno-github.md\` e \`docs/guia-resolucao-gaps.md\` para orientações detalhadas."
+            echo ""
+            echo "---"
+            echo "*Issue criada automaticamente pelo workflow \`validate-readme.yml\`*"
+          } > /tmp/issue_body.md
+
+          echo "Relatório gerado com ${TOTAL_GAPS} gaps."
+
+      # ----------------------------------------------------------
+      # 3. Verificar se já existe uma issue aberta de placeholders
+      #    para evitar duplicatas
+      # ----------------------------------------------------------
+      - name: Verificar issue existente
+        id: verificar_issue
+        if: steps.detectar.outputs.tem_gaps == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Busca issues abertas com o título de validação de placeholders
+          ISSUE_EXISTENTE=$(gh issue list \
+            --state open \
+            --search "Placeholders não preenchidos detectados" \
+            --json number \
+            --jq '.[0].number' \
+            2>/dev/null || echo "")
+
+          if [ -n "$ISSUE_EXISTENTE" ] && [ "$ISSUE_EXISTENTE" != "null" ]; then
+            echo "issue_existente=$ISSUE_EXISTENTE" >> "$GITHUB_OUTPUT"
+            echo "ℹ️  Issue #${ISSUE_EXISTENTE} já existe. Será atualizada."
+          else
+            echo "issue_existente=" >> "$GITHUB_OUTPUT"
+            echo "ℹ️  Nenhuma issue existente. Será criada."
+          fi
+
+      # ----------------------------------------------------------
+      # 4a. Criar nova issue se não existe
+      # ----------------------------------------------------------
+      - name: Criar issue de gaps (nova)
+        if: steps.detectar.outputs.tem_gaps == 'true' && steps.verificar_issue.outputs.issue_existente == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TOTAL=${{ steps.detectar.outputs.total_gaps }}
+          gh issue create \
+            --title "⚠️ [VALIDAÇÃO] Placeholders não preenchidos detectados — ${TOTAL} gaps" \
+            --body-file /tmp/issue_body.md \
+            --label "gap-readme,sev-media" \
+            2>/dev/null || echo "⚠️  Não foi possível criar a issue (labels podem não existir). Continuando."
+
+          echo "✅ Issue de gaps criada."
+
+      # ----------------------------------------------------------
+      # 4b. Atualizar issue existente com novo comentário
+      # ----------------------------------------------------------
+      - name: Atualizar issue de gaps (comentário)
+        if: steps.detectar.outputs.tem_gaps == 'true' && steps.verificar_issue.outputs.issue_existente != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUM=${{ steps.verificar_issue.outputs.issue_existente }}
+          TOTAL=${{ steps.detectar.outputs.total_gaps }}
+
+          gh issue comment "$ISSUE_NUM" \
+            --body "🔄 **Atualização automática** — $(TZ='America/Sao_Paulo' date '+%d/%m/%Y %H:%M BRT')
+
+          Ainda há **${TOTAL} placeholder(s)** não preenchido(s). Consulte o corpo desta issue para a lista atualizada.
+
+          $(cat /tmp/issue_body.md)" \
+            2>/dev/null || true
+
+          # Atualiza o título com o novo total
+          gh issue edit "$ISSUE_NUM" \
+            --title "⚠️ [VALIDAÇÃO] Placeholders não preenchidos detectados — ${TOTAL} gaps" \
+            2>/dev/null || true
+
+          echo "✅ Issue #${ISSUE_NUM} atualizada."
+
+      # ----------------------------------------------------------
+      # 5. Fechar issue automaticamente se não há mais placeholders
+      # ----------------------------------------------------------
+      - name: Fechar issue se não há mais gaps
+        if: steps.detectar.outputs.tem_gaps == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Busca issues abertas de validação
+          ISSUES_ABERTAS=$(gh issue list \
+            --state open \
+            --search "VALIDAÇÃO Placeholders não preenchidos" \
+            --json number \
+            --jq '.[].number' \
+            2>/dev/null || echo "")
+
+          if [ -n "$ISSUES_ABERTAS" ]; then
+            while IFS= read -r ISSUE_NUM; do
+              gh issue close "$ISSUE_NUM" \
+                --comment "✅ **Todos os placeholders foram preenchidos!**
+
+          Verificação automática em $(TZ='America/Sao_Paulo' date '+%d/%m/%Y %H:%M BRT') não encontrou mais nenhum \`{{placeholder}}\` nos arquivos Markdown.
+
+          Issue fechada automaticamente pelo workflow \`validate-readme.yml\`." \
+                2>/dev/null || true
+              echo "✅ Issue #${ISSUE_NUM} fechada — nenhum placeholder encontrado."
+            done <<< "$ISSUES_ABERTAS"
+          else
+            echo "ℹ️  Nenhuma issue de validação aberta para fechar."
+          fi
+
+      # ----------------------------------------------------------
+      # 6. Resumo final no log do workflow
+      # ----------------------------------------------------------
+      - name: Resumo da validação
+        run: |
+          if [ "${{ steps.detectar.outputs.tem_gaps }}" == "true" ]; then
+            echo "════════════════════════════════════════"
+            echo "⚠️  RESULTADO: ${{ steps.detectar.outputs.total_gaps }} placeholder(s) encontrado(s)"
+            echo "   Ação: Issue criada/atualizada no repositório"
+            echo "════════════════════════════════════════"
+          else
+            echo "════════════════════════════════════════"
+            echo "✅ RESULTADO: Nenhum placeholder encontrado"
+            echo "   Todos os READMEs estão corretamente preenchidos!"
+            echo "════════════════════════════════════════"
+          fi
