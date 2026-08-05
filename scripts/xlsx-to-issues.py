@@ -173,7 +173,12 @@ def parse_catalogo(filepath: str) -> list[dict]:
 def parse_raci(filepath: str) -> list[dict]:
     """Lê matriz RACI e retorna lista de issues de atividades."""
     wb = openpyxl.load_workbook(filepath)
-    ws = wb["Matriz RACI"]
+    try:
+        ws = wb["Matriz RACI"]
+    except KeyError:
+        print(f"  ⚠️  Aba 'Matriz RACI' não encontrada em {filepath}.")
+        print("       Verifique se a planilha possui uma aba com exatamente este nome.")
+        return []
     issues = []
 
     # Ler headers (papéis)
