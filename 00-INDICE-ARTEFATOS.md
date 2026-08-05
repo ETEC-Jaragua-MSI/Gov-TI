@@ -29,6 +29,7 @@ bash scripts/gaps-to-issues.sh --create --project 1
 
 | # | Artefato | Formato | Template | Exemplo (InfoPro) |
 |---|---------|---------|----------|-------------------|
+| 00 | README do projeto | MD | `template/README.md` | `README.md` |
 | 01 | Diagnóstico do cenário atual | MD | `template/docs/01-diagnostico-cenario-atual.md` | `exemplo/docs/01-diagnostico-cenario-atual.md` |
 | 02 | Questionário aplicado + respostas | MD | `template/dados/02-questionario-aplicado.md` | `exemplo/dados/02-questionario-aplicado.md` |
 | 03 | Mapeamento do processo AS-IS | MD (Mermaid) | `template/diagramas/03-processo-as-is.md` | `exemplo/diagramas/03-processo-as-is.md` |
