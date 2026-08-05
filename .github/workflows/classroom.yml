@@ -35,5 +35,5 @@ jobs:
       # autograding-grading-reporter action like this:
       # env:
       # ADDITION-TEST_RESULTS: "${{ steps.addition - test.outputs.result }}"
-      #     with:
-      #         runners: addition-test
+      with:
+        runners: ''
