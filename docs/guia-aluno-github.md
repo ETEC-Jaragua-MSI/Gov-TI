@@ -163,19 +163,19 @@ O arquivo **README.md** e o documento principal do seu TCC. Ele ja foi criado co
 
 1. Use a barra de rolagem (scroll) para percorrer o arquivo.
 2. Identifique as secoes que precisam ser preenchidas.
-3. Procure por textos entre chaves duplas, como `{{nome do grupo}}` ou `{{descricao do projeto}}`. Esses sao os placeholders que voce deve substituir.
+3. Procure por textos entre chaves duplas, como `&#123;&#123;nome do grupo&#125;&#125;` ou `&#123;&#123;descricao do projeto&#125;&#125;`. Esses sao os placeholders que voce deve substituir.
 
 ### Passo 4 — Edite com cuidado
 
 1. Clique no trecho que voce quer editar.
-2. Apague apenas o placeholder (o texto entre `{{` e `}}`).
+2. Apague apenas o placeholder (o texto entre `&#123;&#123;` e `&#125;&#125;`).
 3. Digite o texto correto do seu grupo no lugar.
 
 **Exemplo:**
 
 Antes da edicao:
 ```
-# TCC de Governanca de TI — {{nome do grupo}}
+# TCC de Governanca de TI — &#123;&#123;nome do grupo&#125;&#125;
 ```
 
 Depois da edicao:
@@ -187,35 +187,35 @@ Depois da edicao:
 
 ## 6. Removendo os trechos entre chaves duplas
 
-Os placeholders sao marcadores que indicam onde voce deve colocar informacoes do seu grupo. Eles sempre aparecem no formato `{{texto descritivo}}`.
+Os placeholders sao marcadores que indicam onde voce deve colocar informacoes do seu grupo. Eles sempre aparecem no formato `&#123;&#123;texto descritivo&#125;&#125;`.
 
 ### Como identificar um placeholder
 
-- Comeca com dois abre-chaves: `{{`
-- Termina com dois fecha-chaves: `}}`
+- Comeca com dois abre-chaves: `&#123;&#123;`
+- Termina com dois fecha-chaves: `&#125;&#125;`
 - O texto dentro descreve o que deve ser colocado no lugar
 
 ### Exemplos comuns de placeholders e o que colocar
 
 | Placeholder | O que colocar |
 |---|---|
-| `{{nome do grupo}}` | O nome do seu grupo de TCC |
-| `{{nome do aluno 1}}` | O nome completo do primeiro integrante |
-| `{{tema do TCC}}` | O tema escolhido pelo grupo |
-| `{{data de entrega}}` | A data prevista de entrega definida pelo professor |
-| `{{empresa analisada}}` | O nome da empresa ou orgao que voce esta analisando |
-| `{{descricao breve}}` | Um ou dois paragrafos resumindo o projeto |
+| `&#123;&#123;nome do grupo&#125;&#125;` | O nome do seu grupo de TCC |
+| `&#123;&#123;nome do aluno 1&#125;&#125;` | O nome completo do primeiro integrante |
+| `&#123;&#123;tema do TCC&#125;&#125;` | O tema escolhido pelo grupo |
+| `&#123;&#123;data de entrega&#125;&#125;` | A data prevista de entrega definida pelo professor |
+| `&#123;&#123;empresa analisada&#125;&#125;` | O nome da empresa ou orgao que voce esta analisando |
+| `&#123;&#123;descricao breve&#125;&#125;` | Um ou dois paragrafos resumindo o projeto |
 
 ### Passo a passo para substituir placeholders
 
 1. No editor do README, use o atalho **Ctrl + F** (ou **Cmd + F** no Mac) para abrir a busca.
    - Alguns navegadores mostram a busca da pagina, nao do editor. Se isso acontecer, feche a busca e procure manualmente com a rolagem.
-2. Procure o padrao `{{` para localizar todos os placeholders.
+2. Procure o padrao `&#123;&#123;` para localizar todos os placeholders.
 3. Para cada placeholder encontrado:
-   a. Selecione todo o trecho, incluindo os `{{` e `}}`.
+   a. Selecione todo o trecho, incluindo os `&#123;&#123;` e `&#125;&#125;`.
    b. Apague o trecho selecionado.
    c. Digite a informacao correta do seu grupo.
-4. Repita ate nao restar nenhum `{{` no documento.
+4. Repita ate nao restar nenhum `&#123;&#123;` no documento.
 
 > Antes de salvar, percorra o arquivo inteiro mais uma vez com a rolagem para garantir que nao ficou nenhum placeholder esquecido.
 
