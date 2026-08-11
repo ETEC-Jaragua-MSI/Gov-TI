@@ -1,0 +1,97 @@
+name: 📊 Relatório de Progresso Semanal
+description: "Registre o progresso semanal do seu projeto TCC"
+title: "[PROGRESSO] Nome-do-Projeto — Semana XX/XX"
+labels: ["progresso-semanal"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📊 Relatório Semanal de Progresso — TCC Gov-TI
+        Preencha este relatório toda semana para manter o acompanhamento do projeto atualizado.
+
+  - type: input
+    id: projeto
+    attributes:
+      label: "Projeto (slug do label)"
+      description: "Mesmo slug cadastrado na issue de cadastro do projeto"
+      placeholder: "meu-projeto-tcc"
+    validations:
+      required: true
+
+  - type: input
+    id: semana
+    attributes:
+      label: "Período da semana"
+      description: "Datas de início e fim da semana"
+      placeholder: "04/08/2026 a 10/08/2026"
+    validations:
+      required: true
+
+  - type: textarea
+    id: concluido
+    attributes:
+      label: "✅ O que foi concluído esta semana?"
+      description: "Liste as atividades realizadas"
+      placeholder: |
+        - Preenchemos a seção de Framework no README
+        - Aplicamos questionário com 10 respondentes
+        - Iniciamos o diagrama AS-IS
+    validations:
+      required: true
+
+  - type: textarea
+    id: andamento
+    attributes:
+      label: "🔄 O que está em andamento?"
+      description: "Atividades que ainda estão em progresso"
+      placeholder: |
+        - Análise dos dados do questionário (50% feito)
+        - Diagrama TO-BE em rascunho
+
+  - type: textarea
+    id: impedimentos
+    attributes:
+      label: "🚧 Impedimentos / Dificuldades"
+      description: "O que está bloqueando o progresso? Precisa de ajuda?"
+      placeholder: |
+        - Dificuldade em encontrar dados para embasar o problema
+        - Dúvida sobre como calcular o MTTR
+
+  - type: textarea
+    id: proxima-semana
+    attributes:
+      label: "📅 Planejado para a próxima semana"
+      description: "O que a equipe pretende entregar na semana seguinte"
+      placeholder: |
+        - Finalizar diagrama AS-IS
+        - Redigir seção de Metodologia
+        - Coletar mais 5 respostas do questionário
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status-geral
+    attributes:
+      label: "Status geral do projeto"
+      options:
+        - "🟢 No prazo — tudo bem"
+        - "🟡 Atenção — pequenos atrasos"
+        - "🔴 Risco — atraso significativo"
+        - "⛔ Bloqueado — precisa de apoio urgente"
+    validations:
+      required: true
+
+  - type: input
+    id: artefatos-entregues
+    attributes:
+      label: "Artefatos entregues esta semana (números)"
+      description: "Quais artefatos do índice foram concluídos? Ex: 01, 02"
+      placeholder: "01, 03"
+
+  - type: textarea
+    id: observacoes
+    attributes:
+      label: "Observações adicionais"
+      description: "Qualquer informação extra para a professora"
