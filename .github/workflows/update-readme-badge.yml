@@ -68,16 +68,39 @@ jobs:
           # Dono e nome do repositório no formato "usuario/repo"
           REPO: ${{ github.repository }}
         run: |
-          # Lista de labels de projeto — ajuste conforme os repos dos alunos
-          # Formato: "label-no-github|Nome para exibicao"
-          PROJETOS=(
-            "sigatccompact|Sigatccompact (Ativos)"
-            "App-de-Libras|App de Libras"
-            "SOS-EPIs|S.O.S. EPIs"
-            "automacao-residencial|Automacao Residencial"
-            "Automa-o-de-tratamento-de-dados|Automacao Trat. Dados"
-            "gestao-incidentes-infopro|Gestao Incidentes InfoPro"
-          )
+          # Detecta automaticamente os labels de projeto cadastrados no repositório.
+          # Labels de projeto são identificados pela descrição "Projeto TCC:" ou
+          # pelos prefixos conhecidos. Novos projetos cadastrados via issue de
+          # "Cadastro de Novo Projeto TCC" são detectados automaticamente aqui.
+          #
+          # Para adicionar manualmente: crie um label com descrição iniciando em
+          # "Projeto TCC:" e ele aparecerá automaticamente na tabela.
+
+          echo "Detectando labels de projeto automaticamente..."
+          PROJETOS_JSON=$(gh api "repos/$REPO/labels" --paginate \
+            --jq '[.[] | select(.description | startswith("Projeto TCC:") or startswith("Projeto:")) | {label: .name, nome: (.description | ltrimstr("Projeto TCC: ") | ltrimstr("Projeto: "))}]')
+
+          # Fallback: se nenhum label de projeto encontrado, usa lista fixa
+          COUNT=$(echo "$PROJETOS_JSON" | python3 -c "import json,sys; print(len(json.load(sys.stdin)))" 2>/dev/null || echo "0")
+          if [ "$COUNT" -eq 0 ]; then
+            echo "Nenhum label de projeto detectado automaticamente. Usando lista fixa."
+            PROJETOS_JSON='[
+              {"label":"sigatccompact","nome":"Sigatccompact"},
+              {"label":"App-de-Libras","nome":"App de Libras"},
+              {"label":"SOS-EPIs","nome":"S.O.S. EPIs"},
+              {"label":"automacao-residencial","nome":"Automacao Residencial"},
+              {"label":"Automa-o-de-tratamento-de-dados","nome":"Automacao Trat. Dados"},
+              {"label":"gestao-incidentes-infopro","nome":"Gestao Incidentes InfoPro"}
+            ]'
+          fi
+
+          # Converte para array bash
+          readarray -t PROJETOS < <(echo "$PROJETOS_JSON" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for p in data:
+              print(p['label'] + '|' + p['nome'])
+          ")
 
           # Arquivo temporário onde vamos montar a tabela markdown
           TABELA_TEMP=$(mktemp)
