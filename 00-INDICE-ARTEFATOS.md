@@ -60,7 +60,7 @@ bash scripts/gaps-to-issues.sh --create --project 1
 
 ## Progresso por Projeto
 
-> Atualizado automaticamente em: 18/10/2026 às 03:12 (BRT)
+> Atualizado automaticamente em: 19/10/2026 às 03:19 (BRT)
 
 | Projeto | Issues Abertas | Issues Fechadas | Progresso (%) |
 |---------|:--------------:|:---------------:|:-------------:|
