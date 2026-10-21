@@ -6,6 +6,8 @@
 [![Curso](https://img.shields.io/badge/Curso-Manutenção%20e%20Suporte-blue)]()
 [![Disciplina](https://img.shields.io/badge/Disciplina-Governança%20de%20TI-purple)]()
 [![Framework](https://img.shields.io/badge/Framework-ITIL%20v4-orange)]()
+[![Checklist](https://img.shields.io/badge/Checklist-29%2F29%20✓-brightgreen)]()
+[![Score](https://img.shields.io/badge/Score%20README-100%2F100-brightgreen)]()
 
 ---
 

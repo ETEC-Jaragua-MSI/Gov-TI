@@ -1,0 +1,100 @@
+name: Gap no README
+description: Relate um campo ou seção ausente/incorreta no README do TCC
+title: "[GAP] "
+labels:
+  - gap-readme
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 Relato de Gap no README
+        Preencha os campos abaixo para registrar um gap identificado no README.md de um projeto TCC.
+        Consulte a pasta `exemplo/` deste repositório como modelo de preenchimento.
+
+  - type: input
+    id: projeto
+    attributes:
+      label: Projeto
+      description: Nome do repositório do aluno (ex. tcc-app-de-libras)
+      placeholder: ex. tcc-app-de-libras
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severidade
+    attributes:
+      label: Severidade
+      description: Qual o impacto deste gap na avaliação do TCC?
+      options:
+        - "CRITICA — Campo obrigatório completamente ausente"
+        - "ALTA — Campo importante com conteúdo insuficiente"
+        - "MEDIA — Campo presente mas com erro ou inconsistência"
+        - "BAIXA — Melhoria estética ou complementar"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área / Seção
+      description: Qual seção do README está com gap?
+      options:
+        - badges
+        - sobre
+        - resumo
+        - problema
+        - objetivos
+        - framework
+        - metodologia
+        - escopo
+        - entregaveis
+        - cronograma
+        - estrutura
+        - resultados
+        - referencias
+        - glossario
+        - equipe
+        - licenca
+        - template (comentários HTML / placeholders)
+        - outra
+    validations:
+      required: true
+
+  - type: textarea
+    id: descricao
+    attributes:
+      label: Descrição do gap
+      description: Descreva o que está faltando ou incorreto.
+      placeholder: |
+        Ex: A tabela "Sobre o Projeto" ainda contém os placeholders {{TÍTULO_DO_PROJETO}} e {{Nomes}}.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acao
+    attributes:
+      label: Ação necessária
+      description: O que o aluno precisa fazer para corrigir?
+      placeholder: |
+        Ex: Substituir {{TÍTULO_DO_PROJETO}} pelo título real e {{Nomes}} pelos nomes dos integrantes.
+    validations:
+      required: true
+
+  - type: input
+    id: referencia
+    attributes:
+      label: Referência no projeto-exemplo
+      description: Caminho do arquivo no exemplo que mostra o preenchimento correto
+      placeholder: "ex. exemplo/docs/01-diagnostico-cenario-atual.md"
+
+  - type: checkboxes
+    id: confirmacao
+    attributes:
+      label: Confirmação
+      options:
+        - label: Consultei o projeto-exemplo (`exemplo/`) antes de abrir este gap
+          required: true
+        - label: Este gap ainda não foi reportado em outra Issue aberta
+          required: true
