@@ -1,0 +1,121 @@
+name: 🚀 Cadastro de Novo Projeto TCC
+description: "Use este formulário para cadastrar seu grupo e projeto no repositório. Após abrir a issue, a automação criará as labels e o milestone do seu projeto automaticamente."
+title: "[PROJETO] Nome do Seu Projeto — Semestre XXXX.X"
+labels: ["novo-projeto"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 👋 Bem-vindo(a) ao Gov-TI — ETEC Jaraguá
+        Preencha todos os campos abaixo para cadastrar seu projeto. **Não altere os títulos das seções** — a automação lê esses campos para configurar seu projeto automaticamente.
+
+  - type: input
+    id: nome-projeto
+    attributes:
+      label: "Nome do Projeto (slug)"
+      description: "Nome curto sem espaços ou acentos. Será usado como label no GitHub. Ex: `gestao-ativos`, `helpdesk-escolar`"
+      placeholder: "meu-projeto-tcc"
+    validations:
+      required: true
+
+  - type: input
+    id: titulo-completo
+    attributes:
+      label: "Título Completo do Projeto"
+      description: "Título formal do TCC"
+      placeholder: "Implantação de Sistema de Helpdesk na Escola X usando ITIL v4"
+    validations:
+      required: true
+
+  - type: input
+    id: semestre
+    attributes:
+      label: "Semestre"
+      description: "Semestre letivo atual"
+      placeholder: "2026.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: framework
+    attributes:
+      label: "Framework de Governança"
+      description: "Framework principal utilizado no projeto"
+      options:
+        - ITIL v4
+        - COBIT 2019
+        - ISO 27001
+        - NIST CSF
+        - LGPD / GDPR
+        - Scrum / Agile
+        - Outro (especificar no campo abaixo)
+    validations:
+      required: true
+
+  - type: input
+    id: framework-outro
+    attributes:
+      label: "Outro Framework (se aplicável)"
+      description: "Preencha apenas se escolheu 'Outro' acima"
+      placeholder: "Ex: PMBOK, Prince2..."
+
+  - type: textarea
+    id: equipe
+    attributes:
+      label: "Equipe"
+      description: "Liste os integrantes no formato abaixo (um por linha)"
+      placeholder: |
+        - Nome Completo | RA: 123456 | Função: Líder
+        - Nome Completo | RA: 789012 | Função: Desenvolvedor
+        - Nome Completo | RA: 345678 | Função: Analista
+    validations:
+      required: true
+
+  - type: input
+    id: orientador
+    attributes:
+      label: "Orientador(a)"
+      description: "Nome completo do professor orientador"
+      placeholder: "Profª Tainá Oliveira"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: "Problema / Cenário"
+      description: "Descreva o problema que o projeto vai resolver em 2-3 frases"
+      placeholder: "A empresa X não possui processo formalizado para Y, resultando em Z..."
+    validations:
+      required: true
+
+  - type: input
+    id: github-users
+    attributes:
+      label: "Usuários GitHub dos integrantes"
+      description: "Usernames separados por vírgula para atribuição de issues"
+      placeholder: "@aluno1, @aluno2, @aluno3"
+
+  - type: checkboxes
+    id: confirmacoes
+    attributes:
+      label: "Confirmações"
+      options:
+        - label: "Li o guia do aluno em `docs/guia-aluno-github.md`"
+          required: true
+        - label: "Copiei a pasta `template/` para o repositório do meu TCC"
+          required: false
+        - label: "Entendo que as issues de gaps serão criadas automaticamente após análise do README"
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ⚙️ **O que acontece após você abrir esta issue:**
+        1. A automação cria automaticamente a **label do projeto** com cor única
+        2. Cria o **milestone** do semestre para acompanhamento
+        3. Adiciona a issue ao **Project Board** da turma
+        4. A professora revisará e aprovará o cadastro

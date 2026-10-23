@@ -1,0 +1,188 @@
+# ============================================================
+# Workflow: Setup Automático de Novo Projeto TCC
+#
+# Objetivo: quando um aluno abre uma issue com o template
+# "Cadastro de Novo Projeto TCC", este workflow:
+#   1. Lê o slug do projeto preenchido na issue
+#   2. Cria automaticamente a label do projeto (cor única)
+#   3. Cria o milestone do semestre (se não existir)
+#   4. Aplica a label na issue de cadastro
+#   5. Adiciona ao Project Board da turma
+#   6. Posta comentário de boas-vindas na issue
+#
+# Disparo: abertura de issue com label "novo-projeto"
+# ============================================================
+
+name: Setup Automático de Novo Projeto
+
+on:
+  issues:
+    types:
+      - opened
+      - labeled
+
+jobs:
+  setup-projeto:
+    name: Configurar Projeto do Aluno
+    runs-on: ubuntu-latest
+    # Só executa se a issue tem o label "novo-projeto"
+    if: contains(github.event.issue.labels.*.name, 'novo-projeto')
+
+    permissions:
+      issues: write
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ----------------------------------------------------------
+      # Extrair campos da issue (formulário YAML)
+      # Os campos são extraídos pelo padrão ### Título\nConteúdo
+      # ----------------------------------------------------------
+      - name: Extrair dados da issue
+        id: extrair
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          # Extrai o slug do projeto (primeira resposta)
+          SLUG=$(echo "$BODY" | grep -A2 "Nome do Projeto (slug)" | tail -1 | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g')
+          SEMESTRE=$(echo "$BODY" | grep -A2 "Semestre" | grep -E '^[0-9]{4}\.[12]$' | head -1 | tr -d '[:space:]')
+
+          # Fallback se semestre não encontrado
+          if [ -z "$SEMESTRE" ]; then
+            SEMESTRE=$(date +%Y).$(( ($(date +%-m) - 1) / 6 + 1 ))
+          fi
+
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+          echo "semestre=$SEMESTRE" >> "$GITHUB_OUTPUT"
+          echo "milestone=TCC $SEMESTRE" >> "$GITHUB_OUTPUT"
+          echo "Projeto detectado: $SLUG | Semestre: $SEMESTRE"
+
+      # ----------------------------------------------------------
+      # Gerar cor única baseada no nome do projeto (hash)
+      # ----------------------------------------------------------
+      - name: Gerar cor para label
+        id: cor
+        run: |
+          SLUG="${{ steps.extrair.outputs.slug }}"
+          # Gera um hash de 6 caracteres hex a partir do nome
+          COR=$(echo -n "$SLUG" | md5sum | cut -c1-6)
+          echo "cor=$COR" >> "$GITHUB_OUTPUT"
+          echo "Cor gerada para $SLUG: #$COR"
+
+      # ----------------------------------------------------------
+      # Criar label do projeto
+      # ----------------------------------------------------------
+      - name: Criar label do projeto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SLUG="${{ steps.extrair.outputs.slug }}"
+          COR="${{ steps.cor.outputs.cor }}"
+          REPO="${{ github.repository }}"
+
+          gh label create "$SLUG" \
+            --color "$COR" \
+            --description "Projeto TCC: $SLUG" \
+            --repo "$REPO" \
+            --force
+          echo "Label '$SLUG' criada/atualizada com cor #$COR"
+
+      # ----------------------------------------------------------
+      # Criar milestone do semestre (se não existir)
+      # ----------------------------------------------------------
+      - name: Criar milestone do semestre
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MILESTONE="${{ steps.extrair.outputs.milestone }}"
+          REPO="${{ github.repository }}"
+
+          # Verifica se milestone já existe
+          EXISTE=$(gh api "repos/$REPO/milestones" --jq ".[] | select(.title == \"$MILESTONE\") | .number" 2>/dev/null || echo "")
+
+          if [ -z "$EXISTE" ]; then
+            gh api "repos/$REPO/milestones" \
+              --method POST \
+              -f title="$MILESTONE" \
+              -f description="Issues do semestre ${{ steps.extrair.outputs.semestre }}" \
+              -f state="open"
+            echo "Milestone '$MILESTONE' criado"
+          else
+            echo "Milestone '$MILESTONE' já existe (#$EXISTE)"
+          fi
+
+      # ----------------------------------------------------------
+      # Aplicar label do projeto na issue de cadastro
+      # ----------------------------------------------------------
+      - name: Aplicar label na issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SLUG="${{ steps.extrair.outputs.slug }}"
+          ISSUE="${{ github.event.issue.number }}"
+          REPO="${{ github.repository }}"
+
+          gh issue edit "$ISSUE" --add-label "$SLUG" --repo "$REPO"
+          echo "Label '$SLUG' aplicada na issue #$ISSUE"
+
+      # ----------------------------------------------------------
+      # Associar issue ao milestone
+      # ----------------------------------------------------------
+      - name: Associar ao milestone
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MILESTONE="${{ steps.extrair.outputs.milestone }}"
+          ISSUE="${{ github.event.issue.number }}"
+          REPO="${{ github.repository }}"
+
+          MILESTONE_NUM=$(gh api "repos/$REPO/milestones" --jq ".[] | select(.title == \"$MILESTONE\") | .number" 2>/dev/null | head -1)
+
+          if [ -n "$MILESTONE_NUM" ]; then
+            gh api "repos/$REPO/issues/$ISSUE" \
+              --method PATCH \
+              -f milestone="$MILESTONE_NUM" > /dev/null
+            echo "Issue #$ISSUE associada ao milestone #$MILESTONE_NUM ($MILESTONE)"
+          fi
+
+      # ----------------------------------------------------------
+      # Comentário de boas-vindas
+      # ----------------------------------------------------------
+      - name: Postar comentário de boas-vindas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SLUG="${{ steps.extrair.outputs.slug }}"
+          SEMESTRE="${{ steps.extrair.outputs.semestre }}"
+          ISSUE="${{ github.event.issue.number }}"
+          REPO="${{ github.repository }}"
+
+          COMENTARIO="## ✅ Projeto cadastrado com sucesso!
+
+          Olá, equipe **$SLUG**! 👋
+
+          Seu projeto foi configurado automaticamente no repositório Gov-TI. Aqui está o que foi feito:
+
+          - 🏷️ **Label criada:** \`$SLUG\` — use-a em todas as suas issues
+          - 📅 **Milestone:** TCC $SEMESTRE — todas as suas issues serão agrupadas aqui
+          - 📋 **Issue de cadastro** adicionada ao Project Board da turma
+
+          ### 📋 Próximos passos
+
+          1. **Copie a pasta \`template/\`** para o repositório do seu TCC
+          2. **Preencha o README** seguindo o modelo em \`exemplo/\`
+          3. **Abra issues** usando os templates disponíveis quando precisar de revisão ou relatar progresso
+          4. Consulte o [Guia do Aluno](docs/guia-aluno-github.md) em caso de dúvidas
+
+          ### 📎 Links úteis
+
+          - [Índice de Artefatos](00-INDICE-ARTEFATOS.md)
+          - [Projeto-Exemplo (InfoPro)](exemplo/)
+          - [Template do TCC](template/)
+
+          ---
+          _🤖 Mensagem automática — qualquer dúvida, mencione a professora @pro-taina-etec_"
+
+          gh issue comment "$ISSUE" --body "$COMENTARIO" --repo "$REPO"
