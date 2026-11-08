@@ -1,0 +1,119 @@
+# ============================================================
+# Workflow: Fechar Issues do Semestre Anterior em Massa
+#
+# Objetivo: fechar todas as issues abertas com um comentário
+# de encerramento de semestre, de forma manual e segura.
+#
+# Disparo: APENAS manual (workflow_dispatch) com confirmação
+#
+# Como usar:
+#   1. Acesse a aba "Actions" do repositório
+#   2. Selecione "Encerrar Issues do Semestre Anterior"
+#   3. Clique em "Run workflow"
+#   4. Preencha o semestre que está sendo encerrado
+#   5. Clique em "Run workflow" para confirmar
+# ============================================================
+
+name: Encerrar Issues do Semestre Anterior
+
+on:
+  workflow_dispatch:
+    inputs:
+      semestre:
+        description: "Semestre sendo encerrado (ex: 2026.1)"
+        required: true
+        default: "2026.1"
+      confirmar:
+        description: "Digite CONFIRMAR para prosseguir"
+        required: true
+        default: ""
+      label_filtro:
+        description: "Filtrar por label de projeto (opcional — vazio = todas as issues)"
+        required: false
+        default: ""
+
+jobs:
+  fechar-issues:
+    name: Fechar Issues do Semestre ${{ github.event.inputs.semestre }}
+    runs-on: ubuntu-latest
+    # Só executa se o usuário digitou CONFIRMAR
+    if: github.event.inputs.confirmar == 'CONFIRMAR'
+
+    permissions:
+      issues: write
+
+    steps:
+      - name: Verificar confirmação
+        run: |
+          echo "✅ Confirmação recebida. Encerrando issues do semestre ${{ github.event.inputs.semestre }}..."
+          echo "Repositório: ${{ github.repository }}"
+          echo "Disparado por: ${{ github.actor }}"
+
+      - name: Fechar todas as issues abertas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SEMESTRE: ${{ github.event.inputs.semestre }}
+          LABEL_FILTRO: ${{ github.event.inputs.label_filtro }}
+        run: |
+          MOTIVO="🗂️ **Encerramento de Semestre**
+
+          Esta issue foi fechada automaticamente no encerramento do semestre **$SEMESTRE**.
+
+          Os gaps identificados aqui servem de referência para o próximo semestre. Caso o projeto continue, novas issues serão criadas após reavaliação do README atualizado.
+
+          ---
+          _Ação executada por @${{ github.actor }} via workflow 'Encerrar Issues do Semestre Anterior'_"
+
+          # Montar argumentos de filtro
+          FILTRO_ARGS=""
+          if [ -n "$LABEL_FILTRO" ]; then
+            FILTRO_ARGS="--label $LABEL_FILTRO"
+          fi
+
+          echo "Buscando issues abertas..."
+          ISSUES=$(gh issue list \
+            --repo "$REPO" \
+            --state open \
+            --limit 500 \
+            --json number,title \
+            $FILTRO_ARGS \
+            --jq '.[] | .number | tostring')
+
+          if [ -z "$ISSUES" ]; then
+            echo "Nenhuma issue aberta encontrada."
+            exit 0
+          fi
+
+          TOTAL=$(echo "$ISSUES" | wc -l)
+          FECHADAS=0
+          ERROS=0
+
+          echo "Fechando $TOTAL issues..."
+          for NUM in $ISSUES; do
+            if gh issue close "$NUM" \
+              --repo "$REPO" \
+              --comment "$MOTIVO" \
+              --reason "not_planned" 2>/dev/null; then
+              echo "  #$NUM ✅"
+              FECHADAS=$((FECHADAS + 1))
+            else
+              echo "  #$NUM ⚠️ erro"
+              ERROS=$((ERROS + 1))
+            fi
+            sleep 0.3
+          done
+
+          echo ""
+          echo "══════════════════════════════════════"
+          echo "Resultado:"
+          echo "  Total:    $TOTAL"
+          echo "  Fechadas: $FECHADAS"
+          echo "  Erros:    $ERROS"
+          echo "══════════════════════════════════════"
+
+      - name: Resumo no log
+        run: |
+          echo "### ✅ Issues do semestre ${{ github.event.inputs.semestre }} encerradas" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Ação executada por **@${{ github.actor }}** em $(date -u '+%d/%m/%Y %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
