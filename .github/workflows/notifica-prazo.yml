@@ -1,0 +1,195 @@
+# ============================================================
+# Workflow: Notificação de Prazo das Issues
+#
+# Objetivo: verificar diariamente quais Issues abertas têm
+# o campo "Prazo" (no Project V2) vencendo em até 3 dias e
+# adicionar um comentário de alerta na Issue.
+#
+# Como funciona:
+#   1. Lista Issues abertas com label de projeto
+#   2. Para cada Issue, lê o campo "Prazo" do Project V2
+#   3. Se o prazo estiver a ≤ 3 dias, adiciona comentário
+#
+# Pré-requisito:
+#   - Secret PROJECT_TOKEN com escopo "project" e "repo"
+#   - Variável PROJECT_NUMBER com o número do Project V2
+#
+# Disparo:
+#   - Diariamente às 09:00 (horário de Brasília = 12:00 UTC)
+#   - Manualmente via "Run workflow"
+# ============================================================
+
+name: Notificar Prazos Próximos
+
+on:
+  schedule:
+    # 12:00 UTC = 09:00 BRT (horário de Brasília)
+    - cron: '0 12 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  notificar:
+    name: Verificar prazos e notificar
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      # --------------------------------------------------------
+      # 1. Checkout
+      # --------------------------------------------------------
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------------
+      # 2. Verificar Issues com prazo próximo via GraphQL
+      # --------------------------------------------------------
+      - name: Verificar prazos e comentar nas Issues
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER || '15' }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          HOJE=$(date -u +%Y-%m-%d)
+          LIMITE=$(date -u -d "+3 days" +%Y-%m-%d 2>/dev/null || \
+                   date -u -v+3d +%Y-%m-%d)  # macOS fallback
+
+          echo "Data de hoje: $HOJE"
+          echo "Verificando Issues com prazo até: $LIMITE"
+
+          # Buscar itens do Project V2 com campo Prazo via GraphQL
+          QUERY=$(cat <<'GRAPHQL'
+          query($owner: String!, $number: Int!) {
+            organization(login: $owner) {
+              projectV2(number: $number) {
+                items(first: 100) {
+                  nodes {
+                    id
+                    content {
+                      ... on Issue {
+                        number
+                        title
+                        state
+                        url
+                      }
+                    }
+                    fieldValues(first: 10) {
+                      nodes {
+                        ... on ProjectV2ItemFieldDateValue {
+                          date
+                          field {
+                            ... on ProjectV2Field {
+                              name
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          GRAPHQL
+          )
+
+          # Executar query GraphQL
+          RESULTADO=$(gh api graphql \
+            -f query="$QUERY" \
+            -f owner="$OWNER" \
+            -F number="$PROJECT_NUMBER" \
+            2>/dev/null || echo '{"errors": [{"message": "GraphQL indisponível"}]}')
+
+          # Verificar erros
+          if echo "$RESULTADO" | grep -q '"errors"'; then
+            echo "⚠️  Não foi possível acessar o Project V2 via GraphQL."
+            echo "   Verifique se PROJECT_TOKEN tem escopo 'project'."
+            echo "   Alternativa: use a interface do GitHub Projects para configurar lembretes."
+            exit 0
+          fi
+
+          # Processar resultado com Python (mais robusto que jq para datas)
+          python3 - <<PYEOF
+          import json
+          import subprocess
+          import os
+          from datetime import datetime, timedelta
+
+          resultado_json = '''$RESULTADO'''
+          hoje = datetime.strptime("$HOJE", "%Y-%m-%d")
+          limite = datetime.strptime("$LIMITE", "%Y-%m-%d")
+          repo = os.environ.get("REPO", "")
+
+          try:
+              dados = json.loads(resultado_json)
+              itens = dados.get("data", {}).get("organization", {}).get("projectV2", {}).get("items", {}).get("nodes", [])
+          except Exception as e:
+              print(f"Erro ao parsear JSON: {e}")
+              itens = []
+
+          notificados = 0
+          for item in itens:
+              conteudo = item.get("content", {})
+              if not conteudo or conteudo.get("state") != "OPEN":
+                  continue
+
+              issue_num = conteudo.get("number")
+              issue_titulo = conteudo.get("title", "")
+
+              # Procurar campo "Prazo"
+              prazo_str = None
+              for fv in item.get("fieldValues", {}).get("nodes", []):
+                  campo_nome = fv.get("field", {}).get("name", "")
+                  if campo_nome.lower() == "prazo" and fv.get("date"):
+                      prazo_str = fv["date"]
+                      break
+
+              if not prazo_str:
+                  continue
+
+              try:
+                  prazo = datetime.strptime(prazo_str[:10], "%Y-%m-%d")
+              except ValueError:
+                  continue
+
+              dias_restantes = (prazo - hoje).days
+
+              if 0 <= dias_restantes <= 3:
+                  if dias_restantes == 0:
+                      alerta = "🔴 **HOJE** é o prazo!"
+                      urgencia = "HOJE"
+                  elif dias_restantes == 1:
+                      alerta = "🟠 Prazo **amanhã**!"
+                      urgencia = "AMANHÃ"
+                  else:
+                      alerta = f"🟡 Prazo em **{dias_restantes} dias**."
+                      urgencia = f"EM {dias_restantes} DIAS"
+
+                  corpo = (
+                      f"## ⏰ Lembrete de Prazo — {urgencia}\n\n"
+                      f"{alerta}\n\n"
+                      f"| Campo | Detalhe |\n"
+                      f"|-------|---------|\n"
+                      f"| **Issue** | #{issue_num} — {issue_titulo} |\n"
+                      f"| **Prazo** | {prazo.strftime('%d/%m/%Y')} |\n"
+                      f"| **Dias restantes** | {dias_restantes} |\n\n"
+                      f"> Caso precise de mais tempo, solicite à professora e atualize o campo Prazo no Project.\n\n"
+                      f"*Notificação automática gerada pelo workflow `notifica-prazo.yml`*"
+                  )
+
+                  result = subprocess.run(
+                      ["gh", "issue", "comment", str(issue_num),
+                       "--repo", repo, "--body", corpo],
+                      capture_output=True, text=True
+                  )
+                  if result.returncode == 0:
+                      print(f"  ✅ Issue #{issue_num} notificada (prazo: {prazo_str[:10]}, {dias_restantes} dias)")
+                      notificados += 1
+                  else:
+                      print(f"  ❌ Erro ao comentar na Issue #{issue_num}: {result.stderr}")
+
+          print(f"\nTotal de Issues notificadas: {notificados}")
+          PYEOF

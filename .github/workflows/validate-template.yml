@@ -1,0 +1,159 @@
+# ============================================================
+# Workflow: Validador de Placeholders nos Artefatos do TCC
+#
+# Objetivo: detectar campos {{placeholder}} não preenchidos
+# nos arquivos .md e abrir (ou atualizar) uma Issue com
+# a lista de campos pendentes.
+#
+# Disparo:
+#   - Push em qualquer branch
+#   - Pull Request aberto/atualizado
+#   - Manualmente via "Run workflow"
+# ============================================================
+
+name: Validar Placeholders
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  validar:
+    name: Verificar placeholders não preenchidos
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      # --------------------------------------------------------
+      # 1. Checkout
+      # --------------------------------------------------------
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      # --------------------------------------------------------
+      # 2. Varrer arquivos .md em busca de {{placeholders}}
+      # --------------------------------------------------------
+      - name: Buscar placeholders não preenchidos
+        id: varrer
+        run: |
+          echo "Varrendo arquivos .md em busca de {{placeholders}}..."
+
+          # Arquivo temporário com resultados
+          RESULTADO=$(mktemp)
+
+          # Busca todos os .md excluindo node_modules, .git e _site
+          while IFS= read -r -d '' arquivo; do
+            # Extrai todos os placeholders únicos do arquivo
+            placeholders=$(grep -oP '\{\{[^}]+\}\}' "$arquivo" | sort -u || true)
+            if [ -n "$placeholders" ]; then
+              echo "### \`$arquivo\`" >> "$RESULTADO"
+              echo "" >> "$RESULTADO"
+              while IFS= read -r ph; do
+                echo "- \`$ph\`" >> "$RESULTADO"
+              done <<< "$placeholders"
+              echo "" >> "$RESULTADO"
+            fi
+          done < <(find . -name "*.md" \
+            -not -path "./.git/*" \
+            -not -path "./_site/*" \
+            -not -path "./node_modules/*" \
+            -not -path "./template/*" \
+            -print0)
+
+          # Contar total de arquivos com problemas
+          TOTAL=$(grep -c "^###" "$RESULTADO" || echo "0")
+          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+
+          # Exportar conteúdo para uso posterior
+          {
+            echo "conteudo<<RESULTADO_EOF"
+            cat "$RESULTADO"
+            echo "RESULTADO_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          rm -f "$RESULTADO"
+
+      # --------------------------------------------------------
+      # 3. Se encontrou placeholders → abre/atualiza Issue
+      #    Somente em push na main (não em PRs de forks)
+      # --------------------------------------------------------
+      - name: Abrir Issue com placeholders pendentes
+        if: >
+          steps.varrer.outputs.total != '0' &&
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CONTEUDO: ${{ steps.varrer.outputs.conteudo }}
+          TOTAL: ${{ steps.varrer.outputs.total }}
+        run: |
+          TITULO="[PLACEHOLDER] $TOTAL arquivo(s) com campos não preenchidos"
+
+          CORPO="## ⚠️ Campos \`{{placeholder}}\` não preenchidos
+
+          O workflow detectou **$TOTAL arquivo(s)** com campos de template ainda não substituídos.
+
+          > Substitua todos os \`{{campos entre chaves duplas}}\` pelo conteúdo real do seu projeto.
+          > Consulte a pasta \`exemplo/\` como referência de preenchimento.
+
+          ---
+
+          $CONTEUDO
+
+          ---
+
+          *Gerado automaticamente pelo workflow \`validate-template.yml\` em $(TZ='America/Sao_Paulo' date '+%d/%m/%Y às %H:%M (BRT)')*"
+
+          # Verifica se já existe uma Issue aberta com este título padrão
+          ISSUE_EXISTENTE=$(gh issue list \
+            --repo "$REPO" \
+            --label "placeholder-pendente" \
+            --state open \
+            --limit 1 \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$ISSUE_EXISTENTE" ]; then
+            # Atualiza a Issue existente com novo comentário
+            gh issue comment "$ISSUE_EXISTENTE" \
+              --repo "$REPO" \
+              --body "$CORPO"
+            echo "Issue #$ISSUE_EXISTENTE atualizada."
+          else
+            # Cria label se não existir
+            gh label create "placeholder-pendente" \
+              --color "e11d48" \
+              --description "Campos do template ainda não preenchidos" \
+              --force 2>/dev/null || true
+
+            # Cria nova Issue
+            gh issue create \
+              --repo "$REPO" \
+              --title "$TITULO" \
+              --body "$CORPO" \
+              --label "placeholder-pendente"
+            echo "Nova Issue criada."
+          fi
+
+      # --------------------------------------------------------
+      # 4. Em PRs — apenas exibe resumo no log (não abre Issue)
+      # --------------------------------------------------------
+      - name: Exibir resumo no PR
+        if: github.event_name == 'pull_request'
+        run: |
+          TOTAL="${{ steps.varrer.outputs.total }}"
+          if [ "$TOTAL" = "0" ]; then
+            echo "✅ Nenhum placeholder {{}} encontrado nos artefatos."
+          else
+            echo "⚠️ $TOTAL arquivo(s) com placeholders não preenchidos."
+            echo "   Corrija antes de fazer merge."
+            echo "${{ steps.varrer.outputs.conteudo }}"
+          fi

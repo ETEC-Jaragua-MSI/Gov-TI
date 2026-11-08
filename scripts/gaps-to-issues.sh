@@ -7,6 +7,10 @@
 #   bash scripts/gaps-to-issues.sh --create         # Cria issues no GitHub
 #   bash scripts/gaps-to-issues.sh --create --project NUM  # Adiciona ao Project V2
 #
+# FONTE DE DADOS:
+#   scripts/gaps.tsv — edite este arquivo para adicionar/remover gaps
+#   sem precisar alterar o script.
+#
 # PRE-REQUISITOS:
 #   - gh CLI autenticado (gh auth login)
 #   - Repositorio com remote configurado
@@ -33,77 +37,34 @@ declare -A SEV_COLORS=(
   [baixa]="0ea5e9"
 )
 
-# ─────────────────────────────────────────────────────────────
-# DADOS: gaps por projeto
-# Formato: "PROJETO|SEVERIDADE|AREA|DESCRICAO"
-# ─────────────────────────────────────────────────────────────
-
-GAPS=(
-  # App de Libras
-  "App-de-Libras|critica|badges|Remover placeholders dos badges (Status, Framework)"
-  "App-de-Libras|critica|framework|Definir e preencher framework de governanca utilizado"
-  "App-de-Libras|critica|framework|Preencher detalhamento de praticas aplicadas"
-  "App-de-Libras|critica|referencias|Adicionar referencias bibliograficas (minimo 8 fontes ABNT)"
-  "App-de-Libras|alta|sobre|Corrigir formatacao da tabela Sobre o Projeto"
-  "App-de-Libras|alta|metodologia|Preencher amostra/participantes da metodologia"
-  "App-de-Libras|alta|glossario|Preencher glossario com termos especificos do projeto"
-  "App-de-Libras|alta|equipe|Preencher secao Equipe com nomes, RA, funcoes e contatos"
-  "App-de-Libras|alta|entregaveis|Preencher entregaveis com localizacao real dos arquivos"
-  "App-de-Libras|alta|resultados|Preencher resultados e conclusoes"
-  "App-de-Libras|media|cronograma|Corrigir periodo de coleta — datas incoerentes com semestre"
-  "App-de-Libras|media|template|Remover comentarios HTML do template"
-  "App-de-Libras|baixa|palavras-chave|Padronizar palavras-chave sem placeholders"
-
-  # S.O.S. EPIs
-  "SOS-EPIs|critica|badges|Remover placeholders dos badges (Status, Framework)"
-  "SOS-EPIs|critica|framework|Preencher tabela de frameworks"
-  "SOS-EPIs|critica|framework|Preencher detalhamento de praticas aplicadas"
-  "SOS-EPIs|critica|referencias|Adicionar referencias bibliograficas (minimo 8 fontes ABNT)"
-  "SOS-EPIs|critica|equipe|Preencher secao Equipe"
-  "SOS-EPIs|alta|entregaveis|Substituir nomes de arquivos genericos nos entregaveis"
-  "SOS-EPIs|alta|cronograma|Refazer cronograma — 4 fases com atividade identica repetida"
-  "SOS-EPIs|alta|resultados|Preencher resultados e conclusoes com metricas ou projecoes"
-  "SOS-EPIs|alta|glossario|Preencher glossario com termos especificos (RFID, ESP32, etc.)"
-  "SOS-EPIs|media|estrutura|Corrigir estrutura do repositorio — tem placeholders"
-  "SOS-EPIs|media|template|Remover comentarios HTML do template"
-  "SOS-EPIs|media|cronograma|Confirmar periodo de coleta (Ago 2025 a Dez 2025)"
-  "SOS-EPIs|baixa|licenca|Preencher ano e instituicao na licenca"
-
-  # Automacao Residencial
-  "automacao-residencial|critica|geral|Template completamente intocado — NENHUMA secao preenchida"
-  "automacao-residencial|critica|titulo|Definir titulo do projeto"
-  "automacao-residencial|critica|resumo|Escrever resumo (contexto, problema, abordagem, entregaveis, resultado)"
-  "automacao-residencial|critica|problema|Definir problema com dados concretos e mensuraveis"
-  "automacao-residencial|critica|objetivo|Definir objetivo geral com meta mensuravel"
-  "automacao-residencial|critica|objetivos-especificos|Listar objetivos especificos (3-5)"
-  "automacao-residencial|critica|framework|Definir framework de governanca e detalhar aplicacao"
-  "automacao-residencial|critica|escopo|Definir escopo (dentro/fora) e premissas/restricoes"
-  "automacao-residencial|critica|entregaveis|Listar entregaveis com formatos e localizacao"
-  "automacao-residencial|critica|cronograma|Criar cronograma com datas reais"
-  "automacao-residencial|critica|referencias|Adicionar referencias bibliograficas (minimo 8)"
-  "automacao-residencial|critica|equipe|Preencher equipe, glossario e checklist"
-
-  # Automacao de Tratamento de Dados
-  "Automa-o-de-tratamento-de-dados|critica|geral|Template completamente intocado — NENHUMA secao preenchida"
-  "Automa-o-de-tratamento-de-dados|critica|titulo|Definir titulo do projeto"
-  "Automa-o-de-tratamento-de-dados|critica|resumo|Escrever resumo (contexto, problema, abordagem, entregaveis, resultado)"
-  "Automa-o-de-tratamento-de-dados|critica|problema|Definir problema com dados concretos e mensuraveis"
-  "Automa-o-de-tratamento-de-dados|critica|objetivo|Definir objetivo geral com meta mensuravel"
-  "Automa-o-de-tratamento-de-dados|critica|objetivos-especificos|Listar objetivos especificos (3-5)"
-  "Automa-o-de-tratamento-de-dados|critica|framework|Definir framework de governanca e detalhar aplicacao"
-  "Automa-o-de-tratamento-de-dados|critica|escopo|Definir escopo (dentro/fora) e premissas/restricoes"
-  "Automa-o-de-tratamento-de-dados|critica|entregaveis|Listar entregaveis com formatos e localizacao"
-  "Automa-o-de-tratamento-de-dados|critica|cronograma|Criar cronograma com datas reais"
-  "Automa-o-de-tratamento-de-dados|critica|referencias|Adicionar referencias bibliograficas (minimo 8)"
-  "Automa-o-de-tratamento-de-dados|critica|equipe|Preencher equipe, glossario e checklist"
-
-  # Sigatccompact
-  "sigatccompact|alta|checklist|Preencher itens pendentes: diagramas AS-IS/TO-BE, RACI, dados"
-  "sigatccompact|media|orientador|Informar orientador(a) — campo diz A definir"
-  "sigatccompact|media|referencias|Formatar referencias em padrao ABNT completo"
-  "sigatccompact|baixa|diagramas|Adicionar diagramas AS-IS e TO-BE dos processos"
-  "sigatccompact|baixa|verificacao|Verificar que todos os arquivos referenciados existem no repo"
+# Mapeamento de slug do projeto → nome de exibição
+# Chave: slug usado como label (lowercase, sem acentos, sem espaços)
+# Valor: nome legível para exibição nas Issues
+declare -A PROJ_DISPLAY=(
+  [sigatccompact]="Sigatccompact (Ativos)"
+  [app-de-libras]="App de Libras"
+  [sos-epis]="S.O.S. EPIs"
+  [automacao-residencial]="Automacao Residencial"
+  [automacao-tratamento-dados]="Automacao Trat. Dados"
+  [gestao-incidentes-infopro]="Gestao Incidentes InfoPro"
 )
+
+# ─────────────────────────────────────────────────────────────
+# DADOS: carregados do arquivo gaps.tsv
+# Formato das colunas (separadas por TAB):
+#   projeto  severidade  area  descricao
+# ─────────────────────────────────────────────────────────────
+
+GAPS_FILE="$(dirname "$0")/gaps.tsv"
+
+if [ ! -f "$GAPS_FILE" ]; then
+  echo "❌ Arquivo de gaps não encontrado: $GAPS_FILE"
+  echo "   Crie o arquivo scripts/gaps.tsv com os gaps do semestre."
+  exit 1
+fi
+
+# Ler TSV e converter para array (pula cabeçalho)
+mapfile -t GAPS < <(tail -n +2 "$GAPS_FILE" | awk -F'\t' '{print $1"|"$2"|"$3"|"$4}')
 
 echo "================================================="
 echo " Gaps README → GitHub Issues"
@@ -120,12 +81,22 @@ if $CREATE; then
   gh label create "gap-readme" --color "5319e7" --description "Gap identificado no README do TCC" --force 2>/dev/null || true
 
   echo ">>> Criando labels de projeto (para o workflow de progresso)..."
-  gh label create "sigatccompact" --color "1d76db" --description "Projeto: Sigatccompact" --force 2>/dev/null || true
-  gh label create "App-de-Libras" --color "0e8a16" --description "Projeto: App de Libras" --force 2>/dev/null || true
-  gh label create "SOS-EPIs" --color "d93f0b" --description "Projeto: S.O.S. EPIs" --force 2>/dev/null || true
-  gh label create "automacao-residencial" --color "fbca04" --description "Projeto: Automacao Residencial" --force 2>/dev/null || true
-  gh label create "Automa-o-de-tratamento-de-dados" --color "c5def5" --description "Projeto: Automacao Trat. Dados" --force 2>/dev/null || true
-  gh label create "gestao-incidentes-infopro" --color "0075ca" --description "Projeto: Gestao Incidentes InfoPro" --force 2>/dev/null || true
+  # Labels gerados a partir do mapeamento PROJ_DISPLAY (slugs normalizados)
+  declare -A PROJ_COLORS=(
+    [sigatccompact]="1d76db"
+    [app-de-libras]="0e8a16"
+    [sos-epis]="d93f0b"
+    [automacao-residencial]="fbca04"
+    [automacao-tratamento-dados]="c5def5"
+    [gestao-incidentes-infopro]="0075ca"
+  )
+  for slug in "${!PROJ_COLORS[@]}"; do
+    display="${PROJ_DISPLAY[$slug]:-$slug}"
+    gh label create "$slug" \
+      --color "${PROJ_COLORS[$slug]}" \
+      --description "Projeto: $display" \
+      --force 2>/dev/null || true
+  done
   echo ""
 fi
 
