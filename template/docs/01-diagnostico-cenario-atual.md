@@ -93,9 +93,24 @@
 | {{Ex: % de incidentes registrados}} | {{Ex: 40%}} | {{Ex: Estimativa por entrevista}} | {{Período}} |
 | {{Ex: Satisfação do usuário (NPS)}} | {{Ex: 23}} | {{Ex: Questionário aplicado}} | {{Período}} |
 
-## 5. Coleta de Dados
+## 5. Metodologia de Coleta de Dados
 
-### 5.1 Métodos Utilizados
+<!--
+  Descreva aqui COMO você vai (ou foi) coletar os dados para embasar o diagnóstico.
+  Esta seção responde à pergunta: "De onde vieram os números e observações deste documento?"
+  Tamanho esperado: 1 tabela + 2-3 parágrafos explicativos.
+  Ver seção equivalente no exemplo: exemplo/docs/01-diagnostico-cenario-atual.md#5-metodologia
+-->
+
+### 5.1 Tipo de Pesquisa
+
+| Dimensão | Escolha | Justificativa |
+|----------|---------|---------------|
+| **Natureza** | {{Qualitativa / Quantitativa / Mista}} | {{Por quê?}} |
+| **Tipo** | {{Estudo de caso / Pesquisa-ação / Levantamento}} | {{Por quê?}} |
+| **Horizonte temporal** | {{Transversal (ponto único) / Longitudinal (múltiplos momentos)}} | {{Por quê?}} |
+
+### 5.2 Métodos Utilizados
 
 | Método | Público-alvo | Amostra | Período | Instrumento |
 |--------|-------------|---------|---------|-------------|
@@ -104,7 +119,7 @@
 | {{Observação}} | {{Laboratórios}} | {{3 labs, 60 dias}} | {{DD/MM a DD/MM}} | {{Diário de campo}} |
 | {{Análise documental}} | {{Registros existentes}} | {{3 meses}} | {{DD/MM a DD/MM}} | {{Caderno de chamados}} |
 
-### 5.2 Resumo das Entrevistas
+### 5.3 Resumo das Entrevistas
 
 <!--
   Para cada entrevistado, resuma os pontos-chave (sem identificar nominalmente — use cargos).
@@ -120,7 +135,7 @@
 - {{Ponto-chave 2}}
 - {{Ponto-chave 3}}
 
-### 5.3 Resultados do Questionário
+### 5.4 Resultados do Questionário
 
 <!--
   Resuma os principais achados. Dados brutos em dados/questionario-respostas.csv
@@ -134,6 +149,11 @@
 
 <!--
   Compare o cenário atual com as práticas recomendadas pelo framework escolhido.
+  Liste cada prática/requisito do framework e avalie como a organização está hoje.
+  Escala de maturidade sugerida: 0 = Inexistente, 1 = Inicial, 2 = Repetível,
+  3 = Definido, 4 = Gerenciado, 5 = Otimizado.
+  Tamanho esperado: tabela com 5-10 práticas.
+  Ver seção equivalente no exemplo: exemplo/docs/01-diagnostico-cenario-atual.md#6-analise
 -->
 
 | Prática / Requisito do Framework | Situação Atual | Gap Identificado | Nível de Maturidade (0-5) |
